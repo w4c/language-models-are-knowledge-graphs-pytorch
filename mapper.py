@@ -1,14 +1,13 @@
 from constant import invalid_relations_set
-
 from REL.db.generic import GenericLookup
-sqlite_path = "../../Documents/wiki_2020/generated"
-emb = GenericLookup("entity_word_embedding", save_dir=sqlite_path, table_name="embeddings")
 
-
-
-def Map(head, relations, tail, top_first=True, best_scores = True):
+def Map(head, relations, tail, top_first=True, best_scores = True, emb_path=False):
     if head == None or tail == None or relations == None:
         return {}
+    if not emb_path:
+        emb_path = "../../Documents/wiki_2020/generated"
+    emb = GenericLookup("entity_word_embedding", save_dir=emb_path, table_name="embeddings")
+
     head_p_e_m = emb.wiki(str(head), 'wiki')
     if head_p_e_m is None:
         return {}

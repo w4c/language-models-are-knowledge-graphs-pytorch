@@ -53,13 +53,15 @@ def filter_relation_sets(params):
             return {'h': head, 't': tail, 'r': relations, 'c': confidence }
     return {}
 
-def parse_sentence(sentence, tokenizer, encoder, nlp, use_cuda=True):
+def parse_sentence(sentence, tokenizer, encoder, nlp, inp_args, use_cuda=True):
     '''Implement the match part of MAMA
 
     '''
     tokenizer_name = str(tokenizer.__str__)
 
-    inputs, tokenid2word_mapping, token2id, noun_chunks  = create_mapping(sentence, return_pt=True, nlp=nlp, tokenizer=tokenizer)
+    inputs, tokenid2word_mapping, token2id, noun_chunks  = create_mapping(sentence, return_pt=True, nlp=nlp,
+                                                                          tokenizer=tokenizer, use_NER=inp_args.use_ner,
+                                                                          use_noun_chunks=inp_args.use_nouns)
 
     with torch.no_grad():
         if use_cuda:

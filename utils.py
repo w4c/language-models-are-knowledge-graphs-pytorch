@@ -68,7 +68,7 @@ def is_word(token):
         return False
     return True
 
-def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None):
+def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NER=False, use_noun_chunks=True):
     '''Create a mapping
         nlp: spacy model
         tokenizer: huggingface tokenizer
@@ -82,10 +82,35 @@ def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None):
     start_chunk = []
     end_chunk = []
     noun_chunks = []
-    for chunk in doc.noun_chunks:
-        noun_chunks.append(chunk.text)
-        start_chunk.append(chunk.start)
-        end_chunk.append(chunk.end)
+
+    ner_ranges = list()
+
+    if use_NER:
+        for chunk in doc.ents:
+            noun_chunks.append(chunk.text)
+            start_chunk.append(chunk.start)
+            end_chunk.append(chunk.end)
+            if use_noun_chunks:
+                # lets keep track of the ranges, so if we are using noun chunks,
+                # we can ignore noun chunks that overlap with NERs
+                ner_ranges.append(set(range(chunk.start, chunk.end+1)))
+
+
+    if use_noun_chunks:
+        print("using Noun chunks")
+        for chunk in doc.noun_chunks:
+            curr_range = range(chunk.start, chunk.end+1)
+            overlap_found = False
+            for rng in ner_ranges:
+                if rng.intersection(curr_range):
+                    #found overlap between noun chunks and NER chunks. ignore this one
+                    overlap_found = True
+                    break
+            if not overlap_found:
+                noun_chunks.append(chunk.text)
+                start_chunk.append(chunk.start)
+                end_chunk.append(chunk.end)
+
 
     sentence_mapping = []
     token2id = {}
