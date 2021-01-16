@@ -21,10 +21,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.title = "Visualize Knowledge Graph"
 
-fname = "medical_notes"
+fname = "input"
 
-
-##############################################################################################################################################################
 def network_graph(use_noun_chunks, use_ner, spacy_model, language_model, entity_linker, threshold,
                   cmd="env/bin/python extract.py examples/IN_FILE OUT_FILE --use_cuda false --REL_embeddings_path REL_Experiments/wiki_2019/generated"):
     IN_FILE = f"{fname}.txt"
