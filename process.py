@@ -53,15 +53,16 @@ def filter_relation_sets(params):
             return {'h': head, 't': tail, 'r': relations, 'c': confidence }
     return {}
 
-def parse_sentence(sentence, tokenizer, encoder, nlp, inp_args, use_cuda=True):
+def parse_sentence(sentence, tokenizer, encoder, nlp, inp_args, use_cuda=True, linker=None):
     '''Implement the match part of MAMA
 
     '''
     tokenizer_name = str(tokenizer.__str__)
 
-    inputs, tokenid2word_mapping, token2id, noun_chunks  = create_mapping(sentence, return_pt=True, nlp=nlp,
+    inputs, tokenid2word_mapping, token2id, noun_chunks, disamb_ents  = create_mapping(sentence, return_pt=True, nlp=nlp,
                                                                           tokenizer=tokenizer, use_NER=inp_args.use_ner,
-                                                                          use_noun_chunks=inp_args.use_nouns)
+                                                                          use_noun_chunks=inp_args.use_nouns,
+                                                                          linker=linker)
 
     with torch.no_grad():
         if use_cuda:
@@ -98,11 +99,16 @@ def parse_sentence(sentence, tokenizer, encoder, nlp, inp_args, use_cuda=True):
                 all_relation_pairs += [ (o, id2token) for o in output ]
 
     triplet_text = []
+    # for r in all_relation_pairs:
+    #     triplet = filter_relation_sets(r, nlp)
+    #     if len(triplet)>0:
+    #         triplet_text.append(triplet)
     with Pool(10, global_initializer, (nlp,)) as pool:
         for triplet in pool.imap_unordered(filter_relation_sets, all_relation_pairs):
             if len(triplet) > 0:
                 triplet_text.append(triplet)
-    return triplet_text
+
+    return triplet_text, disamb_ents
 
 
 if __name__ == "__main__":

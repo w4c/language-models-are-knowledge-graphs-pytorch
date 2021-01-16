@@ -61,6 +61,7 @@ def BFS(s, end, graph, max_size=-1, black_list_relation=[]):
         candidate_facts.append((path, cum_conf))
 
     candidate_facts = sorted(candidate_facts, key=lambda x: x[1], reverse=True)
+
     return candidate_facts
 
 def is_word(token):
@@ -68,7 +69,8 @@ def is_word(token):
         return False
     return True
 
-def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NER=False, use_noun_chunks=True):
+def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NER=False, linker=None,
+                   use_noun_chunks=True):
     '''Create a mapping
         nlp: spacy model
         tokenizer: huggingface tokenizer
@@ -84,6 +86,7 @@ def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NE
     noun_chunks = []
 
     ner_ranges = list()
+    linked_entities = defaultdict(dict)
 
     if use_NER:
         for chunk in doc.ents:
@@ -95,9 +98,21 @@ def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NE
                 # we can ignore noun chunks that overlap with NERs
                 ner_ranges.append(set(range(chunk.start, chunk.end+1)))
 
+            if linker:
+                try:
+                    umls_ent, confidence = chunk._.kb_ents[0]
+                    disamb_ent = str(linker.kb.cui_to_entity[umls_ent].__getattribute__('concept_id')) + "_" +linker.kb.cui_to_entity[umls_ent].__getattribute__('canonical_name')
+                    linked_entities[chunk.text]['text'] = disamb_ent
+                    linked_entities[chunk.text]['confidence'] = confidence
+                except:
+                    if len(str(chunk.text).strip()) > 0:
+                        linked_entities[chunk.text]['text'] = "UnLinked_{}".format(chunk.text)
+                        linked_entities[chunk.text]['confidence'] = 0
+
+
+
 
     if use_noun_chunks:
-        print("using Noun chunks")
         for chunk in doc.noun_chunks:
             curr_range = range(chunk.start, chunk.end+1)
             overlap_found = False
@@ -107,10 +122,12 @@ def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NE
                     overlap_found = True
                     break
             if not overlap_found:
+                if linker:
+                    linked_entities[chunk.text]['text'] = "UnLinked_{}".format(chunk.text)
+                    linked_entities[chunk.text]['confidence'] = 0
                 noun_chunks.append(chunk.text)
                 start_chunk.append(chunk.start)
                 end_chunk.append(chunk.end)
-
 
     sentence_mapping = []
     token2id = {}
@@ -156,7 +173,7 @@ def create_mapping(sentence, return_pt=False, nlp = None, tokenizer=None, use_NE
         for key, value in outputs.items():
             outputs[key] = torch.from_numpy(np.array(value)).long().unsqueeze(0)
     
-    return outputs, tokenid2word_mapping, token2id, noun_chunks
+    return outputs, tokenid2word_mapping, token2id, noun_chunks, linked_entities
 
 def compress_attention(attention, tokenid2word_mapping, operator=np.mean):
 
