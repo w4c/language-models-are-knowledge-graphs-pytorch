@@ -212,10 +212,10 @@ app.layout = html.Div([
                                           options=[
                                               {"label": "0.1", "value": 0.1},
                                               {"label": "0.05", "value": 0.05},
-                                              {"label": "0.003", "value": 0.003},
+                                              {"label": "0.005", "value": 0.005},
                                           ],
                                           multi=False,
-                                          value=0.003
+                                          value=0.005
                                           )]
                             ), style={'width': '10%', 'display': 'inline-block',"margin-left": "15px", "margin-right": "15px"})
         ],
